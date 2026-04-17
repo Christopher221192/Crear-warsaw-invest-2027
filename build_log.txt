@@ -1,0 +1,22 @@
+
+> poland-house-hunter@1.0.0 build
+> next build
+
+  ▲ Next.js 14.2.35
+  - Environments: .env
+
+   Creating an optimized production build ...
+Failed to compile.
+
+./app/page.tsx
+Module not found: Can't resolve '@/components/Chatbot'
+
+https://nextjs.org/docs/messages/module-not-found
+
+./app/page.tsx
+Module not found: Can't resolve '@/components/ListingDetails'
+
+https://nextjs.org/docs/messages/module-not-found
+
+
+> Build failed because of webpack errors

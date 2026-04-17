@@ -1,0 +1,66 @@
+# config.yaml - Poland House Hunter Config
+
+portals:
+  primary:
+    - name: "otodom"
+      # /pl/oferty/ redirige a /pl/wyniki/ con el path correcto de ciudad
+      # market=PRIMARY: solo obra nueva de promotores
+      url_template: "https://www.otodom.pl/pl/wyniki/sprzedaz/mieszkanie,rynek-pierwotny/mazowieckie/{city}/{city}/{city}?limit=36&ownerTypeSingleSelect=ALL&buildYearMin=2027&buildYearMax=2027&by=DEFAULT&direction=DESC"
+      active: true
+    - name: "rynekpierwotny"
+      url_template: "https://rynekpierwotny.pl/s/nowe-mieszkania-{city}/?delivery=2027"
+      active: true  # Activado para pruebas
+    - name: "gratka"
+      url_template: "https://gratka.pl/nieruchomosci/mieszkania/{city}/pierwotny?rok-budowy:max=2027&rok-budowy:min=2027"
+      active: true  # Activado para pruebas
+    - name: "nieruchomosci_online"
+      url_template: "https://www.nieruchomosci-online.pl/szukaj.html?3,mieszkanie,sprzedaz,,{city}:20571,,,,,,,,,,1&q=2027"
+      active: true  # Activado para pruebas
+
+scraper:
+  max_pages: 1          # páginas por ciudad por portal
+  concurrency: 3        # peticiones paralelas máximas
+  delay_between_pages: 2  # segundos entre páginas
+
+# Filtros Globales
+filters:
+  max_delivery_date: "2027-06-30"   # Q2 2027 límite estricto
+  # Quarters en polaco (romano) tal como aparecen en Otodom
+  delivery_quarters:
+    - "I kwartał 2027"
+    - "II kwartał 2027"
+    - "1 kwartał 2027"
+    - "2 kwartał 2027"
+  min_area_sqm: 20
+  max_area_sqm: 300
+
+cities:
+  - id: "warszawa"
+    name: "Warszawa"
+    appreciation_score: 7     # Capital, alta liquidez, distritos interiores
+    avg_price_sqm: 17400      # PLN/m² mercado primario 2026
+  - id: "wroclaw"
+    name: "Wrocław"
+    appreciation_score: 6.5
+    avg_price_sqm: 13500
+  - id: "krakow"
+    name: "Kraków"
+    appreciation_score: 6.8
+    avg_price_sqm: 14200
+  - id: "gdansk"
+    name: "Gdańsk"
+    appreciation_score: 6.0
+    avg_price_sqm: 12500
+  - id: "lodz"
+    name: "Łódź"
+    appreciation_score: 5.5
+    avg_price_sqm: 10500
+
+# Alertas (SMTP gratuito via Gmail)
+alerts:
+  enabled: false
+  email_from: ""         # tu-email@gmail.com
+  email_to: ""           # destinatario
+  gmail_app_password: "" # app password de Gmail (no tu contraseña normal)
+  # Umbral: alerta si precio/m² está X% por debajo de la media de la ciudad
+  discount_threshold_pct: 5
