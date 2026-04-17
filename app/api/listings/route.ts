@@ -20,7 +20,22 @@ export async function GET() {
       next: { revalidate: 3600 } 
     });
 
+    if (!response.ok) {
+        return NextResponse.json({ 
+            error: "Data source unavailable", 
+            details: `GitHub API returned ${response.status}: ${response.statusText}` 
+        }, { status: response.status });
+    }
+
     const json = await response.json();
+    
+    if (!Array.isArray(json)) {
+        console.error("Data received is not an array:", json);
+        return NextResponse.json({ 
+            error: "Invalid data format", 
+            details: "Source JSON must be an array of objects." 
+        }, { status: 500 });
+    }
     
     // Map JSON to the UI contract using VALID JavaScript syntax
     const mapped = json.map((d: any) => ({
