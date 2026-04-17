@@ -1,71 +1,50 @@
-import { db } from '@vercel/postgres';
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
 export async function GET() {
   try {
-    const client = await db.connect();
+    // Fetch from GitHub API for the Scraper Repo (supports private repos)
+    const OWNER = process.env.GITHUB_REPO_OWNER || "Christopher221192";
+    const REPO = process.env.GITHUB_REPO_NAME || "Crear-warsaw-scraper-pipeline";
+    const PATH = "warsaw_apartments_scored.json";
+    const TOKEN = process.env.GITHUB_TOKEN;
+
+    const GITHUB_API_URL = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${PATH}`;
     
-    // Fetch top 50 opportunities, sorted by highest score
-    const properties = await client.sql`
-      SELECT 
-        id, 
-        url, 
-        price_pln_gross, 
-        price_per_sqm, 
-        rooms, 
-        area_sqm, 
-        floor, 
-        district, 
-        city, 
-        opportunity_score, 
-        annual_yield_percent,
-        title as original_title,
-        market_diff_percent,
-        layout_quality,
-        projected_capital_gain_pct,
-        monthly_mortgage_pln,
-        break_even_years
-      FROM properties 
-      ORDER BY opportunity_score DESC
-      LIMIT 50;
-    `;
+    const response = await fetch(GITHUB_API_URL, { 
+      headers: {
+        "Authorization": `Bearer ${TOKEN}`,
+        "Accept": "application/vnd.github.v3.raw"
+      },
+      next: { revalidate: 3600 } 
+    });
+
+    const json = await response.json();
     
-    // Transform to match exactly what the UI needs (mocking the nested JSON blocks we built before)
-    const mapped = properties.rows.map(row => ({
-      id: row.id,
-      url: row.url,
-      price_pln_gross: Number(row.price_pln_gross),
-      price_per_sqm: Number(row.price_per_sqm),
-      rooms: row.rooms,
-      area_sqm: Number(row.area_sqm),
-      floor: row.floor,
-      district: row.district,
-      city: row.city,
-      opportunity_score: Number(row.opportunity_score),
-      annual_yield_percent: Number(row.annual_yield_percent),
-      original_title: row.original_title,
-      investment_analysis: {
-        rent_sim: {
-          gross_yield_pct: Number(row.annual_yield_percent),
-          estimated_monthly_rent_pln: Number(row.price_per_sqm) * Number(row.area_sqm) * (Number(row.annual_yield_percent)/100) / 12, // approx math
-          monthly_cashflow_pln: 0,
-          break_even_years_from_rent: Number(row.break_even_years)
-        },
-        mortgage_sim: {
-          monthly_payment_pln: Number(row.monthly_mortgage_pln)
-        },
-        projection_2031: {
-          expected_capital_gain_pct: Number(row.projected_capital_gain_pct),
-          estimated_value_pln: Number(row.price_pln_gross) * (1 + Number(row.projected_capital_gain_pct)/100),
-          expected_capital_gain_pln: Number(row.price_pln_gross) * (Number(row.projected_capital_gain_pct)/100)
-        },
-        vision_ai_layout: row.layout_quality
-      }
+    // Map JSON to the UI contract using VALID JavaScript syntax
+    const mapped = json.map((d: any) => ({
+      id: String(d.id),
+      url: d.url || "#",
+      price_pln_gross: d.total_price || 0,
+      price_per_sqm: d.price_per_m2 || 0,
+      rooms: d.title?.includes("2-pok") ? 2 : 3,
+      area_sqm: d.total_price && d.price_per_m2 ? Math.round((d.total_price / d.price_per_m2) * 10) / 10 : 0,
+      floor: 0,
+      district: d.district || "Unknown",
+      city: "Warszawa",
+      opportunity_score: d.opportunity_score || 50,
+      annual_yield_percent: d.investment_analysis?.rent_sim?.gross_yield_pct || 0,
+      original_title: d.title,
+      investment_analysis: d.investment_analysis
     }));
 
     return NextResponse.json(mapped);
-  } catch (error) {
-    console.error('Error fetching Postgres Listings:', error);
-    return NextResponse.json({ error: 'Internal Server Error fetching Database' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Error fetching Local JSON Listings:', error);
+    return NextResponse.json({ 
+      error: 'Internal Server Error reading JSON',
+      details: error.message 
+    }, { status: 500 });
   }
 }

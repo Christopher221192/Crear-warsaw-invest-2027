@@ -13,7 +13,7 @@ echo "🇵🇱 Poland House Hunter — Cloud Deployment"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 
 # ------- CONFIG -------
-GITHUB_USER="${1:-YOUR_GITHUB_USERNAME}"
+GITHUB_USER="Christopher221192"
 FRONTEND_REPO="warsaw-invest-2027"
 SCRAPER_REPO="warsaw-scraper-pipeline"
 
